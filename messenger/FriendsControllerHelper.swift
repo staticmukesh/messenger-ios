@@ -34,31 +34,6 @@ extension FriendsController {
         } catch let err {
             print(err)
         }
-        
-        loadData()
-    }
-    
-    func loadData() {
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        let context = appDelegate.persistentContainer.viewContext
-        
-        let friends = fetchFriends(context: context)
-        messages = [Message]()
-        
-        for friend in friends {
-            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Message")
-            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
-            fetchRequest.predicate = NSPredicate(format: "friend.name == %@", friend.name!)
-            fetchRequest.fetchLimit = 1
-            do {
-                let friendsMsgs = try (context.fetch(fetchRequest)) as? [Message]
-                messages?.append(contentsOf: friendsMsgs!)
-            } catch let err {
-                print(err)
-            }
-        }
-        
-        messages = messages?.sorted(by: {$0.date!.compare($1.date!) == .orderedDescending})
     }
     
     func clearData() {
@@ -85,14 +60,14 @@ extension FriendsController {
         }
     }
     
-    static func createMessage(text: String, friend: Friend, minutesAgo: Double, context: NSManagedObjectContext, isSender: Bool = false) -> Message {
+    static func createMessage(text: String, friend: Friend, minutesAgo: Double, context: NSManagedObjectContext, isSender: Bool = false){
         let message = NSEntityDescription.insertNewObject(forEntityName: "Message", into: context) as! Message
         message.friend = friend
         message.text = text
         message.date = Date().addingTimeInterval(-minutesAgo*60)
         message.isSender = isSender
         
-        return message
+        friend.lastMessage = message
     }
     
     func fetchFriends(context: NSManagedObjectContext) -> [Friend] {
